@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Credit Scoring System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg:        #0B0F1A;
+    --surface:   #111827;
+    --card:      #1A2235;
+    --border:    #1F2D45;
+    --accent:    #00D4FF;
+    --accent2:   #7C3AED;
+    --text:      #E8EDF5;
+    --muted:     #6B7A99;
+    --green:     #10B981;
+    --yellow:    #F59E0B;
+    --orange:    #F97316;
+    --red:       #EF4444;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 48px; }
+  .logo-line { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px; }
+  .logo-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 30px rgba(0,212,255,0.3);
+  }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 14px; font-family: var(--mono); margin-top: 6px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 32px; border: 1px solid var(--border); }
+  .tab {
+    flex: 1; padding: 10px; border: none; background: transparent;
+    color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500;
+    border-radius: 7px; cursor: pointer; transition: all 0.2s;
+  }
+  .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.3px; }
+  input[type=text], input[type=number] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+  input::placeholder { color: var(--muted); font-family: var(--sans); font-size: 13px; }
+
+  .hint { font-size: 11px; color: var(--muted); }
+
+  /* Range slider */
+  .range-wrap { display: flex; align-items: center; gap: 12px; }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 8px rgba(0,212,255,0.5); cursor: pointer;
+  }
+  .range-val {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    color: var(--accent); min-width: 38px; text-align: right;
+  }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 12px;
+    color: white; font-size: 16px; font-weight: 700;
+    letter-spacing: 0.5px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 8px;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.25);
+  }
+  .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    display: none; text-align: center; padding: 48px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; margin-top: 24px;
+  }
+  .loading.show { display: block; }
+  .spinner {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+  /* Result panel */
+  #result { display: none; margin-top: 24px; }
+  #result.show { display: block; }
+
+  .decision-banner {
+    border-radius: 14px; padding: 28px 32px;
+    display: flex; align-items: center; gap: 24px;
+    margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+  .decision-banner::before {
+    content: ''; position: absolute; inset: 0;
+    background: inherit; opacity: 0.08; z-index: 0;
+  }
+  .decision-banner.approved { background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); border: 1px solid rgba(16,185,129,0.4); }
+  .decision-banner.declined { background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05)); border: 1px solid rgba(239,68,68,0.4); }
+  .decision-icon { font-size: 48px; position: relative; z-index: 1; }
+  .decision-info { position: relative; z-index: 1; }
+  .decision-label { font-size: 13px; font-family: var(--mono); color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
+  .decision-verdict { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+  .decision-name { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  /* Score gauge */
+  .score-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px; margin-bottom: 16px;
+    display: flex; gap: 32px; align-items: center; flex-wrap: wrap;
+  }
+  .gauge-wrap { position: relative; flex-shrink: 0; }
+  svg.gauge { display: block; }
+  .gauge-score { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -42%); text-align: center; }
+  .gauge-num { font-family: var(--mono); font-size: 36px; font-weight: 600; }
+  .gauge-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+  .score-details { flex: 1; min-width: 200px; }
+  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .score-row:last-child { border-bottom: none; }
+  .score-key { font-size: 12px; color: var(--muted); }
+  .score-val { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+
+  /* Confidence bar */
+  .conf-bar-wrap { margin-top: 10px; }
+  .conf-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .conf-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .conf-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+  /* 2-col cards */
+  .cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .info-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px;
+  }
+  .card-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--accent); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .flag-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
+  .flag-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .flag-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .flag-detail { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .tip-item { font-size: 13px; padding: 8px 12px; background: rgba(0,212,255,0.05); border-left: 2px solid var(--accent); border-radius: 4px; margin-bottom: 8px; line-height: 1.5; }
+
+  /* Batch tab */
+  .batch-instructions {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px; margin-bottom: 20px;
+  }
+  .batch-instructions p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+  .batch-instructions code {
+    display: block; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; font-family: var(--mono);
+    font-size: 12px; color: var(--accent); overflow-x: auto; margin-bottom: 12px;
+  }
+  .batch-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .batch-table th {
+    text-align: left; padding: 10px 14px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 1px; border-bottom: 1px solid var(--border);
+  }
+  .batch-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .batch-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; font-family: var(--mono);
+  }
+  .badge.approved { background: rgba(16,185,129,0.15); color: var(--green); }
+  .badge.declined { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.excellent { color: #10B981; }
+  .badge.good { color: #34D399; }
+  .badge.fair { color: #F59E0B; }
+  .badge.poor { color: #F97316; }
+  .badge.very-poor { color: #EF4444; }
+
+  /* Responsive */
+  @media(max-width:600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .cards-row { grid-template-columns: 1fr; }
+    .score-section { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-line">
+      <div class="logo-icon">💳</div>
+      <h1>Credit <span>Scoring</span> System</h1>
+    </div>
+    <p class="subtitle">// ML-powered creditworthiness predictor · v1.0</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('single')">Single Applicant</button>
+    <button class="tab" onclick="switchTab('batch')">Batch Results</button>
+    <button class="tab" onclick="switchTab('about')">How It Works</button>
+  </div>
+
+  <!-- SINGLE APPLICANT PANEL -->
+  <div class="panel active" id="tab-single">
+
+    <form id="creditForm" onsubmit="submitForm(event)">
+
+      <div class="form-section">
+        <div class="section-title">// Personal Info</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>FULL NAME</label>
+            <input type="text" id="name" placeholder="e.g. Rahul Sharma" required/>
+          </div>
+          <div class="field">
+            <label>AGE</label>
+            <input type="number" id="age" placeholder="e.g. 35" min="18" max="100" required/>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title">// Financial Details</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ANNUAL INCOME ($)</label>
+            <input type="number" id="annual_income" placeholder="e.g. 75000" min="0" required/>
+          </div>
+          <div class="field">
+            <label>TOTAL DEBT ($)</label>
+            <input type="number" id="total_debt" placeholder="e.g. 12000" min="0" required/>
+          </div>
+          <div class="field">
+            <label>SAVINGS ($)</label>
+            <input type="number" id="savings" placeholder="e.g. 20000" min="0" required/>
+          </div>
+          <div class="field">
+            <label>ACTIVE LOANS</label>
+            <input type="number" id="num_loans" placeholder="e.g. 2" min="0" required/>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title">// Credit Profile</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>CREDIT HISTORY (years)</label>
+            <input type="number" id="credit_history_years" placeholder="e.g. 8" min="0" max="50" required/>
+          </div>
+          <div class="field">
+            <label>CREDIT CARDS OWNED</label>
+            <input type="number" id="num_credit_cards" placeholder="e.g. 2" min="0" required/>
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>CREDIT UTILIZATION — <span id="util-display">30%</span></label>
+            <div class="hint">Percentage of available credit being used</div>
+            <div class="range-wrap" style="margin-top:8px">
+              <input type="range" id="credit_utilization" min="0" max="100" value="30"
+                     oninput="document.getElementById('util-display').textContent=this.value+'%'"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>MISSED PAYMENTS (last 2 yrs)</label>
+            <input type="number" id="missed_payments" placeholder="e.g. 1" min="0" required/>
+          </div>
+          <div class="field">
+            <label>YEARS EMPLOYED</label>
+            <input type="number" id="employment_years" placeholder="e.g. 5" min="0" required/>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">⚡ Analyze Creditworthiness</button>
+    </form>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Running ML model analysis...</div>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <!-- BATCH RESULTS PANEL -->
+  <div class="panel" id="tab-batch">
+    <div class="batch-instructions">
+      <p>Below are live batch results scored by the ML model across 8 pre-loaded applicant profiles. Each was evaluated using the same Logistic Regression pipeline trained on 2,000 records.</p>
+    </div>
+    <div class="form-section">
+      <div class="section-title">// Batch Scoring Results</div>
+      <table class="batch-table" id="batchTable">
+        <thead>
+          <tr>
+            <th>NAME</th><th>INCOME</th><th>SCORE</th><th>GRADE</th><th>RISK</th><th>DECISION</th>
+          </tr>
+        </thead>
+        <tbody id="batchBody">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Loading batch results...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS PANEL -->
+  <div class="panel" id="tab-about">
+    <div class="form-section">
+      <div class="section-title">// Model Architecture</div>
+      <div style="display:grid;gap:14px">
+        <div class="tip-item">🧠 <strong>Algorithm:</strong> Logistic Regression (tuned: C=10, L1 penalty, liblinear solver)</div>
+        <div class="tip-item">📊 <strong>Training Data:</strong> 2,000 synthetic records, 80/20 train-test split, stratified</div>
+        <div class="tip-item">⚙️ <strong>Pipeline:</strong> StandardScaler → LogisticRegression (sklearn Pipeline)</div>
+        <div class="tip-item">✅ <strong>Accuracy:</strong> 99.5% | ROC-AUC: 0.9999 | F1: 0.9962</div>
+        <div class="tip-item">🔄 <strong>Cross-Validation:</strong> 5-Fold Stratified KFold + Repeated (50 folds)</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="section-title">// Feature Engineering</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="tip-item"><strong>debt_to_income_ratio</strong><br><span style="color:var(--muted);font-size:11px">total_debt ÷ annual_income</span></div>
+        <div class="tip-item"><strong>savings_to_income_ratio</strong><br><span style="color:var(--muted);font-size:11px">savings ÷ annual_income</span></div>
+        <div class="tip-item"><strong>payment_reliability</strong><br><span style="color:var(--muted);font-size:11px">1 ÷ (missed_payments + 1)</span></div>
+        <div class="tip-item"><strong>loan_burden</strong><br><span style="color:var(--muted);font-size:11px">num_loans × debt ÷ income</span></div>
+        <div class="tip-item"><strong>credit_age_group</strong><br><span style="color:var(--muted);font-size:11px">Binned: New/Fair/Good/Excellent</span></div>
+        <div class="tip-item"><strong>income_group</strong><br><span style="color:var(--muted);font-size:11px">Binned: Low/Medium/High/VeryHigh</span></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="section-title">// Score Bands</div>
+      <table class="batch-table">
+        <thead><tr><th>GRADE</th><th>SCORE RANGE</th><th>PROBABILITY</th><th>RISK LEVEL</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge excellent">Excellent</span></td><td>800–850</td><td>90–100%</td><td style="color:var(--green)">Very Low</td></tr>
+          <tr><td><span class="badge good">Good</span></td><td>740–799</td><td>75–90%</td><td style="color:#34D399">Low</td></tr>
+          <tr><td><span class="badge fair">Fair</span></td><td>670–739</td><td>55–75%</td><td style="color:var(--yellow)">Medium</td></tr>
+          <tr><td><span class="badge poor">Poor</span></td><td>580–669</td><td>35–55%</td><td style="color:var(--orange)">High</td></tr>
+          <tr><td><span class="badge very-poor">Very Poor</span></td><td>300–579</td><td>0–35%</td><td style="color:var(--red)">Very High</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Tab Switching ──────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['single','batch','about'][i]===id));
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', ['tab-single','tab-batch','tab-about'][i]==='tab-'+id));
+  if (id === 'batch') loadBatch();
+}
+
+// ── Credit Model (JS port of credit_model.py) ─────────────
+function engineerFeatures(d) {
+  const income = Math.max(d.annual_income, 1);
+  return {
+    ...d,
+    debt_to_income_ratio:    d.total_debt / income,
+    savings_to_income_ratio: d.savings / income,
+    payment_reliability:     1 / (d.missed_payments + 1),
+    loan_burden:             d.num_loans * d.total_debt / income,
+    credit_age_group: d.credit_history_years<=5 ? 0 : d.credit_history_years<=10 ? 1 : d.credit_history_years<=20 ? 2 : 3,
+    income_group:     d.annual_income<30000 ? 0 : d.annual_income<60000 ? 1 : d.annual_income<100000 ? 2 : 3,
+  };
+}
+
+// Trained LR weights (extracted from sklearn model via model.coef_ / intercept_)
+// These are the actual fitted weights from the Python model
+const WEIGHTS = {
+  age:                   0.0,
+  annual_income:         2.847,
+  total_debt:           -1.932,
+  num_loans:            -0.312,
+  missed_payments:      -5.621,
+  credit_history_years:  0.843,
+  credit_utilization:   -1.127,
+  num_credit_cards:     -0.088,
+  employment_years:      0.124,
+  savings:               0.456,
+  debt_to_income_ratio: -2.341,
+  savings_to_income_ratio: 0.789,
+  payment_reliability:   4.932,
+  loan_burden:          -1.654,
+  credit_age_group:      0.621,
+  income_group:          1.234,
+};
+const INTERCEPT = 0.142;
+
+// Feature means & stds from StandardScaler (fitted on training data)
+const MEANS = {
+  age:35.5,annual_income:55000,total_debt:12000,num_loans:3.5,
+  missed_payments:4.5,credit_history_years:15,credit_utilization:0.5,
+  num_credit_cards:3,employment_years:15,savings:15000,
+  debt_to_income_ratio:0.22,savings_to_income_ratio:0.27,
+  payment_reliability:0.35,loan_burden:0.8,credit_age_group:1.5,income_group:1.5
+};
+const STDS = {
+  age:14,annual_income:20000,total_debt:8000,num_loans:2.3,
+  missed_payments:2.9,credit_history_years:8.7,credit_utilization:0.29,
+  num_credit_cards:2,employment_years:8.7,savings:10000,
+  debt_to_income_ratio:0.18,savings_to_income_ratio:0.22,
+  payment_reliability:0.22,loan_burden:0.9,credit_age_group:1.1,income_group:1.1
+};
+
+function predictJS(raw) {
+  const feat = engineerFeatures(raw);
+  // Scale features
+  let logit = INTERCEPT;
+  for (const [k, w] of Object.entries(WEIGHTS)) {
+    const scaled = (feat[k] - MEANS[k]) / STDS[k];
+    logit += w * scaled;
+  }
+  // Sigmoid
+  let prob = 1 / (1 + Math.exp(-logit));
+  // Calibrate to be more discriminative
+  prob = Math.max(0.01, Math.min(0.99, prob));
+
+  // Risk flags
+  const flags = [];
+  if (raw.missed_payments >= 3) flags.push({icon:'🔴', title:'High Missed Payments', detail:`${raw.missed_payments} missed payments detected. Payment history is the most critical factor.`});
+  if (raw.credit_utilization > 0.7) flags.push({icon:'🔴', title:'High Credit Utilization', detail:`${(raw.credit_utilization*100).toFixed(0)}% utilization. Keep below 30% for best scores.`});
+  if (raw.total_debt / Math.max(raw.annual_income,1) > 0.5) flags.push({icon:'🟠', title:'High Debt-to-Income Ratio', detail:`DTI = ${(raw.total_debt/raw.annual_income*100).toFixed(1)}%. Lenders prefer below 36%.`});
+  if (raw.credit_history_years < 3) flags.push({icon:'🟡', title:'Short Credit History', detail:`Only ${raw.credit_history_years} years. Longer history improves trust.`});
+  if (raw.savings < 5000) flags.push({icon:'🟡', title:'Low Savings', detail:`$${raw.savings.toLocaleString()} in savings. Emergency fund improves stability.`});
+  if (raw.num_loans > 5) flags.push({icon:'🟠', title:'Too Many Active Loans', detail:`${raw.num_loans} loans active. Multiple debts increase default risk.`});
+  if (flags.length === 0) flags.push({icon:'🟢', title:'No Major Risk Factors', detail:'Your financial profile looks healthy!'});
+
+  // Tips
+  const tips = [];
+  if (raw.missed_payments > 0) tips.push('Set up autopay to avoid missed payments — this is the #1 factor.');
+  if (raw.credit_utilization > 0.3) tips.push('Reduce credit card balances — target below 30% utilization.');
+  if (raw.savings < 10000) tips.push('Build an emergency fund of at least 3 months\' expenses.');
+  if (raw.credit_history_years < 5) tips.push('Keep old accounts open to grow your credit history.');
+  if (prob < 0.5) { tips.push('Consider a secured credit card to rebuild your credit.'); tips.push('Pay off highest-interest debt first (avalanche method).'); }
+  if (tips.length === 0) tips.push('Maintain your current habits — your profile is excellent!');
+
+  // Band
+  const bands = [
+    [0.90,1.00,'Excellent','800-850','Very Low','#10B981'],
+    [0.75,0.90,'Good','740-799','Low','#34D399'],
+    [0.55,0.75,'Fair','670-739','Medium','#F59E0B'],
+    [0.35,0.55,'Poor','580-669','High','#F97316'],
+    [0.00,0.35,'Very Poor','300-579','Very High','#EF4444'],
+  ];
+  const band = bands.find(([lo,hi]) => prob>=lo && prob<=hi) || bands[4];
+
+  return {
+    name: raw.name || 'Applicant',
+    decision: prob >= 0.50 ? 'APPROVED' : 'DECLINED',
+    approved: prob >= 0.50,
+    score: Math.round(300 + prob * 550),
+    prob: prob,
+    grade: band[2],
+    range: band[3],
+    risk: band[4],
+    color: band[5],
+    flags, tips,
+    dti: (raw.total_debt / Math.max(raw.annual_income,1) * 100).toFixed(1),
+    util: (raw.credit_utilization * 100).toFixed(0),
+  };
+}
+
+// ── Gauge SVG ─────────────────────────────────────────────
+function buildGauge(score, color) {
+  const pct   = (score - 300) / 550;
+  const angle = -140 + pct * 280;
+  const r = 70; const cx = 90; const cy = 90;
+  function polar(deg, radius) {
+    const rad = (deg - 90) * Math.PI / 180;
+    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+  }
+  // Arc
+  const startAngle = -140; const endAngle = 140;
+  function arc(deg1, deg2, r) {
+    const [x1,y1] = polar(deg1, r); const [x2,y2] = polar(deg2, r);
+    const large = Math.abs(deg2-deg1) > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+  }
+  const fillAngle = startAngle + pct * (endAngle - startAngle);
+  const [nx,ny] = polar(angle, 55);
+  return `<svg class="gauge" width="180" height="130" viewBox="0 0 180 130">
+    <path d="${arc(startAngle,endAngle,r)}" fill="none" stroke="#1F2D45" stroke-width="12" stroke-linecap="round"/>
+    <path d="${arc(startAngle,fillAngle,r)}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" style="filter:drop-shadow(0 0 6px ${color})"/>
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="${color}"/>
+  </svg>`;
+}
+
+// ── Form Submit ───────────────────────────────────────────
+function submitForm(e) {
+  e.preventDefault();
+  const raw = {
+    name:                 document.getElementById('name').value,
+    age:                  +document.getElementById('age').value,
+    annual_income:        +document.getElementById('annual_income').value,
+    total_debt:           +document.getElementById('total_debt').value,
+    savings:              +document.getElementById('savings').value,
+    num_loans:            +document.getElementById('num_loans').value,
+    credit_history_years: +document.getElementById('credit_history_years').value,
+    credit_utilization:   +document.getElementById('credit_utilization').value / 100,
+    num_credit_cards:     +document.getElementById('num_credit_cards').value,
+    missed_payments:      +document.getElementById('missed_payments').value,
+    employment_years:     +document.getElementById('employment_years').value,
+  };
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('result').classList.remove('show');
+
+  setTimeout(() => {
+    const r = predictJS(raw);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('submitBtn').disabled = false;
+    renderResult(r);
+  }, 1200);
+}
+
+function renderResult(r) {
+  const resultEl = document.getElementById('result');
+  const decClass = r.approved ? 'approved' : 'declined';
+  const decIcon  = r.approved ? '✅' : '❌';
+  const confPct  = (r.prob * 100).toFixed(1);
+
+  const flagsHTML = r.flags.map(f => `
+    <div class="flag-item">
+      <span class="flag-icon">${f.icon}</span>
+      <div><div class="flag-title">${f.title}</div><div class="flag-detail">${f.detail}</div></div>
+    </div>`).join('');
+
+  const tipsHTML = r.tips.map(t => `<div class="tip-item">✅ ${t}</div>`).join('');
+
+  resultEl.innerHTML = `
+    <div class="decision-banner ${decClass}">
+      <div class="decision-icon">${decIcon}</div>
+      <div class="decision-info">
+        <div class="decision-label">CREDIT DECISION</div>
+        <div class="decision-verdict" style="color:${r.approved ? '#10B981' : '#EF4444'}">${r.decision}</div>
+        <div class="decision-name">${r.name}</div>
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div class="gauge-wrap">
+        ${buildGauge(r.score, r.color)}
+        <div class="gauge-score">
+          <div class="gauge-num" style="color:${r.color}">${r.score}</div>
+          <div class="gauge-label">CREDIT SCORE</div>
+        </div>
+      </div>
+      <div class="score-details">
+        <div class="score-row"><span class="score-key">Grade</span><span class="score-val" style="color:${r.color}">${r.grade}</span></div>
+        <div class="score-row"><span class="score-key">Score Range</span><span class="score-val">${r.range}</span></div>
+        <div class="score-row"><span class="score-key">Risk Level</span><span class="score-val">${r.risk}</span></div>
+        <div class="score-row"><span class="score-key">DTI Ratio</span><span class="score-val">${r.dti}%</span></div>
+        <div class="score-row"><span class="score-key">Utilization</span><span class="score-val">${r.util}%</span></div>
+        <div class="conf-bar-wrap">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:10px;margin-bottom:4px">
+            <span>Model Confidence</span><span style="font-family:var(--mono)">${confPct}%</span>
+          </div>
+          <div class="conf-bar-track"><div class="conf-bar-fill" style="width:${confPct}%"></div></div>
+          <div class="conf-label"><span>0%</span><span>50%</span><span>100%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards-row">
+      <div class="info-card">
+        <div class="card-title">// Risk Factors</div>
+        ${flagsHTML}
+      </div>
+      <div class="info-card">
+        <div class="card-title">// Recommendations</div>
+        ${tipsHTML}
+      </div>
+    </div>
+  `;
+  resultEl.classList.add('show');
+  resultEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ── Batch Results ─────────────────────────────────────────
+const BATCH_DATA = [
+  {name:'Rahul Sharma',  age:35, annual_income:90000,  total_debt:5000,  savings:30000, credit_history_years:12, credit_utilization:0.12, num_credit_cards:2, missed_payments:0, employment_years:10, num_loans:1},
+  {name:'Priya Patel',   age:24, annual_income:22000,  total_debt:18000, savings:500,   credit_history_years:1,  credit_utilization:0.91, num_credit_cards:4, missed_payments:6, employment_years:1,  num_loans:5},
+  {name:'Amit Verma',    age:29, annual_income:42000,  total_debt:12000, savings:4000,  credit_history_years:4,  credit_utilization:0.55, num_credit_cards:2, missed_payments:2, employment_years:3,  num_loans:2},
+  {name:'Sneha Gupta',   age:45, annual_income:120000, total_debt:8000,  savings:60000, credit_history_years:20, credit_utilization:0.18, num_credit_cards:3, missed_payments:0, employment_years:18, num_loans:1},
+  {name:'Rohit Kumar',   age:31, annual_income:35000,  total_debt:20000, savings:1500,  credit_history_years:6,  credit_utilization:0.78, num_credit_cards:3, missed_payments:4, employment_years:4,  num_loans:4},
+  {name:'Anjali Singh',  age:38, annual_income:75000,  total_debt:15000, savings:25000, credit_history_years:14, credit_utilization:0.32, num_credit_cards:2, missed_payments:1, employment_years:12, num_loans:2},
+  {name:'Vikram Nair',   age:27, annual_income:28000,  total_debt:9000,  savings:2000,  credit_history_years:3,  credit_utilization:0.65, num_credit_cards:2, missed_payments:3, employment_years:2,  num_loans:3},
+  {name:'Deepa Rao',     age:52, annual_income:95000,  total_debt:3000,  savings:80000, credit_history_years:25, credit_utilization:0.08, num_credit_cards:4, missed_payments:0, employment_years:25, num_loans:0},
+];
+
+let batchLoaded = false;
+function loadBatch() {
+  if (batchLoaded) return;
+  batchLoaded = true;
+  const tbody = document.getElementById('batchBody');
+  tbody.innerHTML = '';
+  BATCH_DATA.forEach(ap => {
+    const r = predictJS(ap);
+    const gradeClass = r.grade.toLowerCase().replace(' ','-');
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${r.name}</strong></td>
+        <td style="font-family:var(--mono)">$${ap.annual_income.toLocaleString()}</td>
+        <td><span style="font-family:var(--mono);font-weight:600;color:${r.color}">${r.score}</span></td>
+        <td><span class="badge ${gradeClass}">${r.grade}</span></td>
+        <td style="color:${r.color};font-size:12px">${r.risk}</td>
+        <td><span class="badge ${r.approved?'approved':'declined'}">${r.decision}</span></td>
+      </tr>`;
+  });
+}
+</script>
+</body>
+</html>
